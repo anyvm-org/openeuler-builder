@@ -1,0 +1,32 @@
+  # Publish the pinned QEMU build the loongarch64 guest needs at run time as
+  # a release asset, so downstream consumers (anyvm's runtime, end users)
+  # fetch it from the release alongside the VM images. The ~30MB tarball is
+  # NOT committed to git: files/build-qemu10.sh compiles it from source
+  # right here (the same script hooks/host_beforeBuild.sh uses during
+  # image builds), then the explicit list below is uploaded.
+  # A single job, NOT part of the build matrix: every matrix job uploading
+  # the same asset name in parallel would race (GitHub rejects duplicate
+  # asset names), and the upload should not depend on any one image build
+  # succeeding. Injected via UPLOAD_FILES_JOB in .github/data/datafile.ini;
+  # builders without extra release files simply omit that key and the
+  # template placeholder renders empty.
+  release-files:
+    # Gate on the event, not github.ref: a 'release' event's github.ref can be
+    # refs/heads/<branch>, which silently skips the upload. event_name is stable.
+    if: "github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build the pinned QEMU tarball
+      run: bash files/build-qemu10.sh loongarch64
+    - name: Upload files/ Release Assets
+      uses: softprops/action-gh-release@v3
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        # Pass the tag explicitly: action-gh-release derives it from github.ref
+        # by default, but on a 'release' event that can be a branch ref, failing
+        # with "GitHub Releases requires a tag".
+        tag_name: ${{ github.event.release.tag_name || github.ref_name }}
+        files: |
+          files/qemu-10.2.3-loongarch64-noble.tar.zst
