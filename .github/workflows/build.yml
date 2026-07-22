@@ -1,0 +1,155 @@
+name: "Build"
+
+permissions:
+  contents: write
+  packages: write
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - 'build.py'
+      - '.github/workflows/build.yml'
+      - '*.txt'
+      - 'conf/*'
+      - 'hooks/*'
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - 'build.py'
+      - '.github/workflows/build.yml'
+      - '*.txt'
+      - 'conf/*'
+      - 'hooks/*'
+  workflow_dispatch:
+
+  release:
+    types: [ created ]
+
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["22.03-LTS-SP4", "24.03-LTS-SP4", "25.09", "22.03-LTS-SP4-aarch64", "24.03-LTS-SP4-aarch64", "25.09-aarch64", "24.03-LTS-SP4-loongarch64"]
+    runs-on: ubuntu-24.04
+    steps:
+#    - name: Free Disk Space (Ubuntu)
+#      uses: jlumbroso/free-disk-space@main
+#      with:
+#        # this might remove tools that are actually needed,
+#        # if set to "true" but frees about 6 GB
+#        tool-cache: false
+    - uses: actions/checkout@v6
+    - name: Creating Web console
+      uses: anyvm-org/cf-tunnel@v0
+      id: tunnel
+      with:
+        protocol: http
+        port: 8000
+    - run: |
+        python3 build.py conf/openeuler-${{ matrix.os }}.conf
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        # One artifact per matrix job, so they don't collide and each can be
+        # downloaded independently from the run page.
+        name: openeuler-${{ matrix.os }}
+        # build.py writes all generated files (including these release
+        # artifacts) under build/ to keep the repo root clean; see wf().
+        path: |
+          build/openeuler-${{ matrix.os }}.qcow2.zst*
+          build/openeuler-${{ matrix.os }}-id_rsa.pub
+          build/openeuler-${{ matrix.os }}-host.id_rsa
+          build/openeuler-${{ matrix.os }}.qemu
+          build/openeuler-${{ matrix.os }}.profile.json
+        if-no-files-found: warn
+        # qcow2.zst is already maximally compressed; gzip-recompressing the
+        # bundle just burns CPU for ~0 savings.
+        compression-level: 0
+        # Auto-expire to keep the repo's artifact storage quota from growing
+        # unboundedly. Two days is enough for a human to grab a copy for
+        # local verification; anything that needs to persist longer should
+        # cut a release (which goes through the Upload Release Asset step
+        # below and lives forever).
+        retention-days: 2
+    - name: Upload Release Asset
+      # Gate on the event, not github.ref: for a 'release' event github.ref is
+      # NOT guaranteed to be refs/tags/<tag> -- depending on how the release/tag
+      # is created it can come through as refs/heads/<target_commitish> (e.g.
+      # refs/heads/main), which silently skips the upload. event_name is stable.
+      if: "github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')"
+      id: upload-release-asset
+      uses: softprops/action-gh-release@v3
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        # action-gh-release derives the tag from github.ref by default, but on a
+        # 'release' event github.ref can be refs/heads/<branch> (not a tag), which
+        # fails with "GitHub Releases requires a tag". Pass the tag explicitly:
+        # release event -> github.event.release.tag_name; tag push -> github.ref_name.
+        tag_name: ${{ github.event.release.tag_name || github.ref_name }}
+        files: |
+          build/openeuler-${{ matrix.os }}.qcow2.zst*
+          build/openeuler-${{ matrix.os }}-id_rsa.pub
+          build/openeuler-${{ matrix.os }}-host.id_rsa
+          build/openeuler-${{ matrix.os }}.qemu
+          build/openeuler-${{ matrix.os }}.profile.json
+
+
+
+
+
+
+
+
+
+
+  # Publish the pinned QEMU build the loongarch64 guest needs at run time as
+  # a release asset, so downstream consumers (anyvm's runtime, end users)
+  # fetch it from the release alongside the VM images. The ~30MB tarball is
+  # NOT committed to git: files/build-qemu10.sh compiles it from source
+  # right here (the same script hooks/host_beforeBuild.sh uses during
+  # image builds), then the explicit list below is uploaded.
+  # A single job, NOT part of the build matrix: every matrix job uploading
+  # the same asset name in parallel would race (GitHub rejects duplicate
+  # asset names), and the upload should not depend on any one image build
+  # succeeding. Injected via UPLOAD_FILES_JOB in .github/data/datafile.ini;
+  # builders without extra release files simply omit that key and the
+  # template placeholder renders empty.
+  release-files:
+    # Gate on the event, not github.ref: a 'release' event's github.ref can be
+    # refs/heads/<branch>, which silently skips the upload. event_name is stable.
+    if: "github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build the pinned QEMU tarball
+      run: bash files/build-qemu10.sh loongarch64
+    - name: Upload files/ Release Assets
+      uses: softprops/action-gh-release@v3
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        # Pass the tag explicitly: action-gh-release derives it from github.ref
+        # by default, but on a 'release' event that can be a branch ref, failing
+        # with "GitHub Releases requires a tag".
+        tag_name: ${{ github.event.release.tag_name || github.ref_name }}
+        files: |
+          files/qemu-10.2.3-loongarch64-noble.tar.zst
+
+
+
+
+
+
+
+
