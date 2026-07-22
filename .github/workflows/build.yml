@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["22.03-LTS-SP4", "24.03-LTS-SP4", "25.09", "22.03-LTS-SP4-aarch64", "24.03-LTS-SP4-aarch64", "25.09-aarch64", "24.03-LTS-SP4-loongarch64"]
+        os: ["22.03-LTS-SP4", "24.03-LTS-SP4", "25.09", "22.03-LTS-SP4-aarch64", "24.03-LTS-SP4-aarch64", "25.09-aarch64", "25.09-riscv64", "24.03-LTS-SP4-loongarch64"]
     runs-on: ubuntu-24.04
     steps:
 #    - name: Free Disk Space (Ubuntu)
