@@ -1,0 +1,77 @@
+{
+  "os": "openeuler",
+  "releases": [
+    {
+      "tag": "22.03-LTS-SP4",
+      "release": "22.03-LTS-SP4",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "22.03-LTS-SP4-aarch64",
+      "release": "22.03-LTS-SP4",
+      "arch": "aarch64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "24.03-LTS-SP4",
+      "release": "24.03-LTS-SP4",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "24.03-LTS-SP4-aarch64",
+      "release": "24.03-LTS-SP4",
+      "arch": "aarch64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "24.03-LTS-SP4-loongarch64",
+      "release": "24.03-LTS-SP4",
+      "arch": "loongarch64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "25.09",
+      "release": "25.09",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "25.09-aarch64",
+      "release": "25.09",
+      "arch": "aarch64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "25.09-riscv64",
+      "release": "25.09",
+      "arch": "riscv64",
+      "sync": "rsync,scp,nfs",
+      "shutdown": "shutdown -h now",
+      "desktop": false,
+      "build": true
+    }
+  ]
+}
