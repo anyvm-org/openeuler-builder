@@ -24,6 +24,28 @@ if [ "$(uname -m)" = "riscv64" ]; then
     done
 fi
 
+# openEuler's shipped /etc/yum.repos.d/*.repo declare BOTH a baseurl and a
+# metalink (https://mirrors.openeuler.org/metalink?repo=...). librepo prefers
+# the metalink, and the metalink -- not the mirror -- is the authority on the
+# expected sha512 of repomd.xml. So whenever the metalink service lags a repo
+# republish, EVERY dnf call dies with
+#   "Downloading successful, but checksum doesn't match ...
+#    Cannot download repomd.xml: All mirrors were tried"
+# even though every mirror serves a correct, self-consistent repomd.xml and
+# every file it references. Seen 2026-08-30 on the 'update' repo of both
+# 22.03-LTS-SP4 and 24.03-LTS-SP4: the mirrors serve repomd sha512 1590d98c...
+# while the metalink still demands e3542757.../7bb543ba..., and the metalink
+# endpoint itself intermittently 504s. It is NOT a cache problem -- "dnf clean
+# all" does not help, because the metalink is refetched every time.
+#
+# Comment the metalink lines out so dnf falls back to the baseurl, which is
+# the plain mirror path and is always self-consistent. Nothing else about the
+# repo configuration changes.
+echo "--- disabling metalink= (a stale metalink breaks every dnf) ---"
+for repofile in /etc/yum.repos.d/*.repo; do
+    sed -i 's/^metalink=/#metalink=/' "$repofile" 2>/dev/null || true
+done
+
 # NOTE: do NOT run "cloud-init clean" here even if cloud-init is present.
 # build.py reboots right after this hook, and a clean makes cloud-init
 # treat the next boot as a new instance, which (via ssh_deletekeys)
