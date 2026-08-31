@@ -68,7 +68,7 @@
       "tag": "25.09-riscv64",
       "release": "25.09",
       "arch": "riscv64",
-      "sync": "rsync,scp,nfs,tar",
+      "sync": "rsync,scp,sshfs,nfs,tar",
       "shutdown": "shutdown -h now",
       "desktop": false,
       "build": true
