@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/anyvm-org/openeuler-builder/actions/workflows/build.yml/badge.svg)](https://github.com/anyvm-org/openeuler-builder/actions/workflows/build.yml)
 
-Latest: v2.0.3
+Latest: v2.0.4
 
 
 The image builder for `openeuler`
@@ -33,10 +33,7 @@ is run.
 
 Upstream media: the official openEuler VM images from
 https://repo.openeuler.org/ (download page:
-https://www.openeuler.org/en/download/). The builder downloads them
-from https://mirrors.aliyun.com/openeuler/ and points the guest's dnf
-there too: it is a byte-identical mirror, and an order of magnitude
-faster from the CI runners than the rate-limited origin.
+https://www.openeuler.org/en/download/).
 
 
 
