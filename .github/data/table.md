@@ -2,7 +2,7 @@
 
 | Release | x86_64 (amd64) | aarch64 (arm64) | riscv64 | loongarch64 |
 |---------|---------|---------|---------|---------|
-| 25.09 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,nfs,tar) | — |
+| 25.09 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — |
 | 24.03-LTS-SP4 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — | ✅ (rsync,scp,sshfs,nfs,tar) |
 | 22.03-LTS-SP4 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — | — |
 
@@ -21,4 +21,7 @@ is run.
 
 Upstream media: the official openEuler VM images from
 https://repo.openeuler.org/ (download page:
-https://www.openeuler.org/en/download/).
+https://www.openeuler.org/en/download/). The builder downloads them
+from https://mirrors.aliyun.com/openeuler/ and points the guest's dnf
+there too: it is a byte-identical mirror, and an order of magnitude
+faster from the CI runners than the rate-limited origin.
