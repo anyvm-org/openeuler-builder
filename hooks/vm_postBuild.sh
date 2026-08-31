@@ -11,10 +11,10 @@ echo "=================== openeuler postBuild ===="
 echo "--- enabling sshd.service ---"
 systemctl enable sshd.service 2>/dev/null || systemctl enable sshd 2>/dev/null || true
 
-# Two upstream defects in the shipped /etc/yum.repos.d/*.repo, both of
-# which cost minutes on every build and hit end users inside the VM too:
+# One upstream defect in the shipped /etc/yum.repos.d/*.repo, which costs
+# minutes on every build and hits end users inside the VM too:
 #
-# 1. WRONG EPOL PATH ON riscv64. That image's openEuler.repo sets
+# WRONG EPOL PATH ON riscv64. That image's openEuler.repo sets
 #    baseurl=.../EPOL/$basearch/, but the tree lives at
 #    .../EPOL/main/$basearch/ -- the x86_64 and aarch64 files get it
 #    right, riscv64 does not. The wrong path 404s, which fails the whole
@@ -24,25 +24,25 @@ systemctl enable sshd.service 2>/dev/null || systemctl enable sshd 2>/dev/null |
 #    (.../EPOL/main/riscv64/repodata/repomd.xml returns 200 and its
 #    primary.xml lists fuse-sshfs), the path in the file is just wrong.
 #
-# 2. SLOW ORIGIN. repo.openeuler.org is server-side rate limited: on the
-#    GHA runner its repodata came down at 44-193 kB/s, so refreshing the
-#    six enabled repos (34.6 MB) burned 4m49s of a 13-minute build --
-#    longer than fetching the 940 MB image itself. mirrors.aliyun.com
-#    serves the same tree (verified 200 for every repo x arch this
-#    builder uses) and is the only mirror with an overseas CDN edge,
-#    which is what the US-based CI runners resolve to.
+# The baseurl deliberately stays on the official repo.openeuler.org. It is
+# slow (44-193 kB/s of repodata on a GHA runner, ~4m49s of a 13-minute
+# build), and mirrors.aliyun.com was tried as a faster stand-in -- but a
+# mirror only helps if it is COMPLETE. On 2026-08-31 aliyun's
+# openEuler-25.09/everything/aarch64 repomd.xml referenced a
+# -primary.xml.zst and a -filelists.xml.zst that both 404 on that mirror,
+# so every dnf on that image died (vmactions/openeuler-vm CI). Sweeping 8
+# release/arch pairs x 4 repos, aliyun scored 31/32 while
+# repo.openeuler.org, repo.huaweicloud.com, tuna, nju and ustc all scored
+# 32/32. Correctness before speed: the origin is the one tree guaranteed
+# to be self-consistent with what upstream just published.
 #
 # Character-class forms ([.] [$]) are used instead of backslash escapes
 # on purpose: this file travels through several quoting layers before a
 # shell in the guest ever sees it, and a swallowed backslash turns a
 # back-reference into a control byte that silently corrupts the repo file.
-echo "--- repos: fixing the EPOL path and switching to mirrors.aliyun.com ---"
+echo "--- repos: fixing the EPOL path ---"
 for repofile in /etc/yum.repos.d/*.repo; do
     sed -i 's|/EPOL/[$]basearch/|/EPOL/main/$basearch/|g' "$repofile" 2>/dev/null || true
-    sed -i 's|^baseurl=https://repo[.]openeuler[.]org/|baseurl=https://mirrors.aliyun.com/openeuler/|' "$repofile" 2>/dev/null || true
-    sed -i 's|^baseurl=http://repo[.]openeuler[.]org/|baseurl=https://mirrors.aliyun.com/openeuler/|' "$repofile" 2>/dev/null || true
-    sed -i 's|^gpgkey=https://repo[.]openeuler[.]org/|gpgkey=https://mirrors.aliyun.com/openeuler/|' "$repofile" 2>/dev/null || true
-    sed -i 's|^gpgkey=http://repo[.]openeuler[.]org/|gpgkey=https://mirrors.aliyun.com/openeuler/|' "$repofile" 2>/dev/null || true
 done
 
 # debuginfo/source (and 22.03's extra update-source) are enabled by
@@ -72,9 +72,9 @@ done
 # all" does not help, because the metalink is refetched every time.
 #
 # Comment the metalink lines out so dnf falls back to the baseurl, which is
-# the plain mirror path and is always self-consistent. This also keeps the
-# mirror rewrite above effective: a live metalink would send dnf back to the
-# slow mirror list regardless of what baseurl says.
+# the plain origin path and is always self-consistent with itself. It also
+# pins dnf to that single tree instead of librepo's mirror rotation, so one
+# stale or incomplete mirror cannot break a build.
 echo "--- disabling metalink= (a stale metalink breaks every dnf) ---"
 for repofile in /etc/yum.repos.d/*.repo; do
     sed -i 's/^metalink=/#metalink=/' "$repofile" 2>/dev/null || true
