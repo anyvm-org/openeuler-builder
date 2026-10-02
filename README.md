@@ -14,6 +14,7 @@ All the supported releases are here:
 
 | Release | x86_64 (amd64) | aarch64 (arm64) | riscv64 | loongarch64 |
 |---------|---------|---------|---------|---------|
+| 26.09 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — | — |
 | 25.09 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — |
 | 24.03-LTS-SP4 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — | ✅ (rsync,scp,sshfs,nfs,tar) |
 | 22.03-LTS-SP4 | ✅ (rsync,scp,sshfs,nfs,tar) | ✅ (rsync,scp,sshfs,nfs,tar) | — | — |
@@ -50,6 +51,6 @@ How to build:
 
     Just clone the repo. and run:
     ```bash
-    python3 build.py conf/openeuler-25.09.conf
+    python3 build.py conf/openeuler-26.09.conf
     ```
    
